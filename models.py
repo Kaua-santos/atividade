@@ -38,28 +38,28 @@ print("\n" + "="*50)
 print("CREATE — Inserindo médicos, pacientes")
 print("="*50)
 
-with Session() as session:
-    try:
-        dra_silva = Medico(nome="Dra. Ana Silva", especialidade="Cardiologia")
-        dr_costa  = Medico(nome="Dr. Bruno Costa", especialidade="Ortopedia")
+# with Session() as session:
+#     try:
+#         dra_silva = Medico(nome="Dra. Ana Silva", especialidade="Cardiologia")
+#         dr_costa  = Medico(nome="Dr. Bruno Costa", especialidade="Ortopedia")
 
-        # FIX: Assigned doctors to patients directly via the 'medico' relationship 
-        # to satisfy the nullable=False constraint on medico_id
-        joao  = Paciente(nome="João Souza", idade=10, cpf="111.111.111-11", medico=dra_silva)
-        maria = Paciente(nome="Maria Lima", idade=19, cpf="222.222.222-22", medico=dr_costa)
-        pedro = Paciente(nome="Pedro Alves", idade=25, cpf="333.333.333-33", medico=dra_silva)
+#         # FIX: Assigned doctors to patients directly via the 'medico' relationship 
+#         # to satisfy the nullable=False constraint on medico_id
+#         joao  = Paciente(nome="João Souza", idade=10, cpf="111.111.111-11", medico=dra_silva)
+#         maria = Paciente(nome="Maria Lima", idade=19, cpf="222.222.222-22", medico=dr_costa)
+#         pedro = Paciente(nome="Pedro Alves", idade=25, cpf="333.333.333-33", medico=dra_silva)
 
-        session.add_all([dra_silva, dr_costa, joao, maria, pedro])
-        session.commit()
-        print("Dados inseridos com sucesso!")
+#         session.add_all([dra_silva, dr_costa, joao, maria, pedro])
+#         session.commit()
+#         print("Dados inseridos com sucesso!")
 
-    except Exception as erro:
-        session.rollback()
-        print(f"Erro: {erro}")
+#     except Exception as erro:
+#         session.rollback()
+#         print(f"Erro: {erro}")
 
 
 print("\n" + "="*50)
-print("READ — Consultando e navegando")
+print("READ — navegando")
 print("="*50)
 
 with Session() as session:
@@ -81,6 +81,14 @@ with Session() as session:
         print("\nTodos os pacientes na base:")
         for pac in session.query(Paciente).all():
             print(f"  {pac.nome} é atendido por {pac.medico.nome}")
+
+    except Exception as erro:
+        print(f"Erro na consulta: {erro}")
+
+with Session() as session: 
+    try: 
+        pass
+
 
     except Exception as erro:
         print(f"Erro na consulta: {erro}")
