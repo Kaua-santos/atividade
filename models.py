@@ -11,12 +11,11 @@ class Medico(Base):
     id         = Column(Integer, primary_key=True)
     nome        = Column(String(100), primary_key=False)
     especialidade = Column(String(100))
-    data = Column(Integer)
 
     pacientes = relationship("Paciente", back_populates="medico", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Paciente(id={self.pacientes}, nome='{self.nome}', cpf={self.especialidade}, data {self.data})>"
+        return f"<Paciente(id={self.pacientes}, nome='{self.nome}', cpf={self.especialidade})>"
     
 class Paciente(Base):
     __tablename__ = "pacientes"
@@ -31,34 +30,26 @@ class Paciente(Base):
     medico = relationship("Medico", back_populates="pacientes")
 
     def __repr__(self):
-        return f"<paciente(nome='{self.nome}', medico_id={self.medico_id}, cpf= {self.cpf})>"
+        return f"<paciente(nome='{self.nome}', idade={self.idade}, cpf= {self.cpf})>"
 
 Base.metadata.create_all(engine)
 
 print("\n" + "="*50)
-print("CREATE — Inserindo médicos, pacientes e atendimentos")
+print("CREATE — Inserindo médicos, pacientes")
 print("="*50)
 
 with Session() as session:
     try:
-        dra_silva = Medico(nome="Dra. Ana Silva",    especialidade="Cardiologia")
-        dr_costa  = Medico(nome="Dr. Bruno Costa",   especialidade="Ortopedia")
+        dra_silva = Medico(nome="Dra. Ana Silva", especialidade="Cardiologia")
+        dr_costa  = Medico(nome="Dr. Bruno Costa", especialidade="Ortopedia")
 
-        joao  = Paciente(nome="João Souza",  cpf="111.111.111-11")
-        maria = Paciente(nome="Maria Lima",  cpf="222.222.222-22")
-        pedro = Paciente(nome="Pedro Alves", cpf="333.333.333-33")
+        # FIX: Assigned doctors to patients directly via the 'medico' relationship 
+        # to satisfy the nullable=False constraint on medico_id
+        joao  = Paciente(nome="João Souza", idade=10, cpf="111.111.111-11", medico=dra_silva)
+        maria = Paciente(nome="Maria Lima", idade=19, cpf="222.222.222-22", medico=dr_costa)
+        pedro = Paciente(nome="Pedro Alves", idade=25, cpf="333.333.333-33", medico=dra_silva)
 
         session.add_all([dra_silva, dr_costa, joao, maria, pedro])
-        session.flush()
-
-        session.add_all([
-            Paciente(medico=dra_silva, paciente=joao,  data="2025-01-10", diagnostico="Hipertensão leve"),
-            Paciente(medico=dra_silva, paciente=maria, data="2025-01-12", diagnostico="Checkup normal"),
-            Paciente(medico=dr_costa,  paciente=joao,  data="2025-01-15", diagnostico="Fratura no tornozelo"),
-            Paciente(medico=dr_costa,  paciente=pedro, data="2025-01-20", diagnostico="Dor lombar"),
-        ])
-
-    
         session.commit()
         print("Dados inseridos com sucesso!")
 
@@ -66,30 +57,30 @@ with Session() as session:
         session.rollback()
         print(f"Erro: {erro}")
 
-# print("\n" + "="*50)
-# print("READ — Consultando e navegando")
-# print("="*50)
 
-# with Session() as session:
-#     try:
-#         # Histórico de um paciente: navega paciente → atendimentos → médico
-#         print("Histórico do João:")
-#         joao = session.query(Paciente).filter_by(nome="João Souza").first()
-#         for atend in joao.atendimentos:
-#             print(f"  {atend.data} | Dr(a): {atend.medico.nome} | {atend.diagnostico}")
+print("\n" + "="*50)
+print("READ — Consultando e navegando")
+print("="*50)
 
-#         # Agenda de um médico: navega médico → atendimentos → paciente
-#         print("\nAtendimentos da Dra. Ana Silva:")
-#         dra = session.query(Medico).filter_by(nome="Dra. Ana Silva").first()
-#         for atend in dra.atendimentos:
-#             print(f"  {atend.data} | Paciente: {atend.paciente.nome} | {atend.diagnostico}")
+with Session() as session:
+    try:
+        # Consultando os dados do médico de um paciente específico
+        print("Médico responsável pelo João:")
+        joao = session.query(Paciente).filter_by(nome="João Souza").first()
+        if joao and joao.medico:
+            print(f"  Paciente: {joao.nome} | Médico: {joao.medico.nome} ({joao.medico.especialidade})")
 
-#         # Listando todos os atendimentos diretamente
-#         print("\nTodos os atendimentos:")
-#         for atend in session.query(Atendimento).all():
-#             print(f"  {atend.data} | {atend.medico.nome} → {atend.paciente.nome} | {atend.diagnostico}")
+        # Consultando todos os pacientes de um médico específico
+        print("\nLista de pacientes da Dra. Ana Silva:")
+        dra = session.query(Medico).filter_by(nome="Dra. Ana Silva").first()
+        if dra:
+            for pac in dra.pacientes:
+                print(f"  {pac.nome} - {pac.idade} anos (CPF: {pac.cpf})")
 
-#     except Exception as erro:
-#         session.rollback()
-#         print(f"Erro: {erro}")
+        # Listando todos os pacientes e seus médicos
+        print("\nTodos os pacientes na base:")
+        for pac in session.query(Paciente).all():
+            print(f"  {pac.nome} é atendido por {pac.medico.nome}")
 
+    except Exception as erro:
+        print(f"Erro na consulta: {erro}")
